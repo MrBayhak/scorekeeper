@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#15233d">
+<title>Score Keeper</title>
+<style>
+  :root{
+    --navy:#15233d;
+    --navy-2:#1f3357;
+    --accent:#0c8466;          /* teal-green for primary fills (white text passes AA) */
+    --accent-press:#0a6f56;
+    --accent-tint:#e3f3ee;
+    --danger:#cb3a32;
+    --danger-tint:#fbe9e8;
+    --bg:#eaedf2;
+    --card:#ffffff;
+    --text:#16202e;
+    --muted:#5d6b7e;
+    --border:#dde2ea;
+    --gold:#caa23a;
+    --flash:#fff3c4;
+    --radius:14px;
+    --tap:48px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:#c9cfd9;
+    color:var(--text);
+    line-height:1.4;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* phone shell — fills viewport on mobile, centered card on desktop */
+  #shell{
+    width:100%;
+    max-width:430px;
+    margin:0 auto;
+    min-height:100vh;
+    min-height:100dvh;
+    background:var(--bg);
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 0 40px rgba(0,0,0,.18);
+  }
+  /* ---------- header ---------- */
+  header{
+    background:var(--navy);
+    color:#fff;
+    padding:14px 16px;
+    padding-top:max(14px,env(safe-area-inset-top));
+    display:flex;
+    align-items:center;
+    gap:12px;
+    position:sticky;
+    top:0;
+    z-index:20;
+    min-height:58px;
+  }
+  header .h-title{font-size:1.12rem;font-weight:700;letter-spacing:.2px;flex:1;min-width:0;}
+  header .h-title .sub{display:block;font-size:.72rem;font-weight:500;color:#aeb9ca;margin-top:1px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .icon-btn{
+    background:rgba(255,255,255,.12);border:none;color:#fff;
+    width:40px;height:40px;border-radius:10px;
+    font-size:1.2rem;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;flex:none;
+  }
+  .icon-btn:active{background:rgba(255,255,255,.26);}
+  /* ---------- scroll body ---------- */
+  main{flex:1;overflow-y:auto;padding:16px;padding-bottom:140px;-webkit-overflow-scrolling:touch;}
+  h2.section{font-size:.78rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+    margin:22px 4px 10px;font-weight:700;}
+  h2.section:first-child{margin-top:4px;}
+  /* ---------- cards ---------- */
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+  .card+.card{margin-top:12px;}
+  /* ---------- buttons ---------- */
+  .btn{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;min-height:54px;border-radius:12px;border:none;
+    font-size:1.05rem;font-weight:700;cursor:pointer;font-family:inherit;
+    padding:0 16px;
+  }
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:active:not(:disabled){background:var(--accent-press);}
+  .btn-secondary{background:#fff;color:var(--navy);border:1.5px solid var(--navy);}
+  .btn-secondary:active{background:#eef1f6;}
+  .btn-ghost{background:#eef1f6;color:var(--text);border:1px solid var(--border);}
+  .btn-ghost:active{background:#e2e7ef;}
+  .btn-danger{background:var(--danger);color:#fff;}
+  .btn-danger:active{background:#a82f28;}
+  .btn-sm{min-height:44px;font-size:.95rem;}
+  .btn-row{display:flex;gap:10px;}
+  .btn-row .btn{flex:1;}
+  .stack{display:flex;flex-direction:column;gap:12px;}
+  /* ---------- form ---------- */
+  label.field{display:block;margin-bottom:14px;}
+  label.field>.lbl{display:block;font-size:.82rem;font-weight:700;color:var(--text);margin-bottom:6px;}
+  .input{
+    width:100%;min-height:var(--tap);border:1.5px solid var(--border);border-radius:11px;
+    padding:0 14px;font-size:1rem;font-family:inherit;color:var(--text);background:#fff;
+  }
+  .input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint);}
+  .input::placeholder{color:#9aa6b4;}
+  /* segmented toggle */
+  .seg{display:flex;background:#eef1f6;border-radius:11px;padding:4px;gap:4px;}
+  .seg button{
+    flex:1;min-height:42px;border:none;background:transparent;border-radius:8px;
+    font-size:.92rem;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit;
+  }
+  .seg button.on{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.12);}
+  /* stepper */
+  .stepper{display:flex;align-items:center;gap:0;border:1.5px solid var(--border);border-radius:11px;overflow:hidden;}
+  .stepper button{width:52px;height:var(--tap);border:none;background:#f3f5f9;font-size:1.5rem;color:var(--navy);
+    cursor:pointer;font-weight:700;line-height:1;}
+  .stepper button:active{background:#e3e8ef;}
+  .stepper .val{flex:1;text-align:center;font-size:1.15rem;font-weight:700;}
+  /* chips */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{
+    display:inline-flex;align-items:center;gap:7px;
+    min-height:40px;padding:0 14px;border-radius:999px;
+    background:#eef1f6;border:1px solid var(--border);color:var(--text);
+    font-size:.92rem;font-weight:600;cursor:pointer;font-family:inherit;
+  }
+  .chip:active{background:#e2e7ef;}
+  .chip.accent{background:var(--accent-tint);border-color:#bfe3d7;color:var(--accent-press);}
+  .chip .x{color:var(--muted);font-size:1.05rem;font-weight:700;margin-left:1px;}
+  .chip-add{background:#fff;border:1.5px dashed var(--border);color:var(--muted);}
+  /* player setup row */
+  .pl-row{display:flex;gap:8px;margin-bottom:10px;align-items:center;}
+  .pl-row .input{flex:1;}
+  .pl-row .num{width:30px;text-align:center;font-weight:700;color:var(--muted);flex:none;}
+  .quick-btn{
+    flex:none;width:var(--tap);height:var(--tap);border-radius:11px;border:1.5px solid var(--border);
+    background:#fff;font-size:1.3rem;color:var(--accent);cursor:pointer;display:flex;
+    align-items:center;justify-content:center;
+  }
+  .quick-btn:active{background:#eef1f6;}
+  /* favorite / saved match card */
+  .tap-card{
+    background:#fff;border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;width:100%;
+    font-family:inherit;
+  }
+  .tap-card:active{background:#f6f8fb;}
+  .tap-card .tc-body{flex:1;min-width:0;}
+  .tap-card .tc-title{font-size:1.02rem;font-weight:700;}
+  .tap-card .tc-meta{font-size:.82rem;color:var(--muted);margin-top:2px;}
+  .tap-card .tc-del{
+    flex:none;width:38px;height:38px;border-radius:9px;border:none;background:var(--danger-tint);
+    color:var(--danger);font-size:1.05rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .badge{display:inline-block;background:var(--navy);color:#fff;border-radius:8px;font-size:.72rem;
+    font-weight:700;padding:3px 8px;}
+  /* ---------- active scoring rows ---------- */
+  .lead-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;}
+  .lead-bar .sort{display:flex;align-items:center;gap:8px;}
+  .lead-bar .seg{width:auto;}
+  .lead-bar .seg button{padding:0 14px;min-height:38px;}
+  .prow{
+    background:#fff;border:1px solid var(--border);border-radius:var(--radius);
+    padding:12px 12px 12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;
+    position:relative;overflow:hidden;
+  }
+  .prow .rank{
+    flex:none;width:42px;height:42px;border-radius:50%;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;font-weight:800;font-size:1.02rem;
+    background:#eef1f6;color:var(--muted);line-height:1;
+  }
+  .prow .rank small{font-size:.55rem;font-weight:700;margin-top:1px;}
+  .prow.r1 .rank{background:#fbf1cf;color:#8a6d10;}
+  .prow.r2 .rank{background:#eceff3;color:#5d6b7e;}
+  .prow.r3 .rank{background:#f3e6da;color:#9a6535;}
+  .prow .p-info{flex:1;min-width:0;}
+  .prow .p-name{font-weight:700;font-size:1.02rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .prow .p-total{font-size:.8rem;color:var(--muted);margin-top:1px;}
+  .prow .p-total b{color:var(--text);font-size:1.05rem;font-weight:800;}
+  .prow .p-in{flex:none;width:92px;}
+  .prow .p-in .input{height:46px;min-height:46px;text-align:center;font-size:1.05rem;font-weight:700;padding:0 6px;}
+  /* sticky action footer */
+  .footer{
+    position:absolute;left:0;right:0;bottom:0;background:rgba(234,237,242,.95);
+    backdrop-filter:blur(6px);padding:12px 16px;padding-bottom:max(12px,env(safe-area-inset-bottom));
+    border-top:1px solid var(--border);z-index:15;
+  }
+  .footer .btn-row{margin-top:0;}
+  .footer .mini-row{display:flex;gap:10px;margin-top:10px;}
+  .footer .mini-row .btn{min-height:46px;font-size:.92rem;}
+  /* ---------- toast ---------- */
+  #toast{
+    position:fixed;left:50%;transform:translateX(-50%) translateY(20px);
+    bottom:96px;background:var(--navy);color:#fff;padding:12px 18px;border-radius:12px;
+    font-size:.9rem;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.3);z-index:60;
+    max-width:360px;width:max-content;text-align:center;opacity:0;pointer-events:none;
+    transition:opacity .18s,transform .18s;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  #toast .t-stand{display:block;font-weight:500;font-size:.8rem;color:#bcc7d6;margin-top:3px;}
+  /* ---------- drawer / modal ---------- */
+  .scrim{position:fixed;inset:0;background:rgba(16,24,38,.5);z-index:40;display:flex;align-items:flex-end;
+    justify-content:center;}
+  .scrim.center{align-items:center;padding:20px;}
+  .drawer{
+    background:var(--bg);width:100%;max-width:430px;border-radius:18px 18px 0 0;
+    max-height:82vh;display:flex;flex-direction:column;
+  }
+  .drawer .d-head{display:flex;align-items:center;justify-content:space-between;padding:16px;
+    border-bottom:1px solid var(--border);}
+  .drawer .d-head h3{margin:0;font-size:1.05rem;}
+  .drawer .d-body{overflow-y:auto;padding:16px;}
+  .modal{background:#fff;border-radius:16px;max-width:340px;width:100%;padding:22px;text-align:center;}
+  .modal h3{margin:0 0 8px;font-size:1.12rem;}
+  .modal p{margin:0 0 20px;color:var(--muted);font-size:.95rem;}
+  /* history table */
+  .htable{width:100%;border-collapse:collapse;font-size:.88rem;}
+  .htable th,.htable td{border:1px solid var(--border);padding:0;text-align:center;}
+  .htable thead th{background:var(--navy);color:#fff;padding:8px 6px;font-size:.78rem;position:sticky;top:0;}
+  .htable tbody th{background:#f3f5f9;padding:8px 6px;font-weight:700;color:var(--muted);white-space:nowrap;}
+  .htable td input{width:100%;min-width:54px;height:42px;border:none;background:transparent;text-align:center;
+    font-size:.95rem;font-weight:600;font-family:inherit;color:var(--text);}
+  .htable td input:focus{outline:none;background:var(--accent-tint);}
+  .htable td.flash input{background:var(--flash);}
+  .htable tfoot td,.htable tfoot th{background:#eceff3;font-weight:800;padding:8px 6px;}
+  .htable .scroll-wrap{overflow:auto;}
+  /* winner */
+  .winner-wrap{text-align:center;padding:18px 8px 6px;}
+  .crown{font-size:3.4rem;line-height:1;}
+  .winner-label{font-size:.78rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);
+    font-weight:700;margin-top:8px;}
+  .winner-name{font-size:2rem;font-weight:800;margin:2px 0;line-height:1.1;}
+  .winner-score{display:inline-block;background:var(--accent-tint);color:var(--accent-press);
+    font-weight:800;font-size:1.05rem;padding:6px 16px;border-radius:999px;margin-top:6px;}
+  .empty{text-align:center;color:var(--muted);font-size:.92rem;padding:18px 10px;}
+  .hint{font-size:.8rem;color:var(--muted);margin:6px 4px 0;}
+  .err-banner{background:var(--danger-tint);color:var(--danger);border:1px solid #f0c3c0;border-radius:11px;
+    padding:11px 14px;font-size:.88rem;font-weight:600;margin-bottom:12px;}
+</style>
+</head>
+<body>
+  <div id="shell">
+    <header id="hdr"></header>
+    <main id="app"></main>
+  </div>
+  <div id="toast"></div>
+  <div id="overlay"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   Score Keeper — single-file vanilla JS app
+   ============================================================ */
+
+/* ---------- storage layer ---------- */
+const LS = {
+  players:'sk_savedPlayers',
+  favs:'sk_favoriteGames',
+  matches:'sk_savedMatches',
+};
+function load(key, fallback){
+  try{ const v = JSON.parse(localStorage.getItem(key)); return v==null?fallback:v; }
+  catch(e){ return fallback; }
+}
+function save(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+function getPlayers(){ return load(LS.players, []); }
+function setPlayers(a){ save(LS.players, a); }
+function getFavs(){ return load(LS.favs, seedFavs()); }
+function setFavs(a){ save(LS.favs, a); }
+function getMatches(){ return load(LS.matches, []); }
+function setMatches(a){ save(LS.matches, a); }
+
+/* seed a couple of favorites + players on first run so the app isn't empty */
+function seedFavs(){
+  const seed = [
+    {name:'Skyjo', winCondition:'lowest', endCondition:'threshold', roundsOrPoints:100, defaultPlayerCount:4},
+    {name:'Mexican Train', winCondition:'lowest', endCondition:'rounds', roundsOrPoints:13, defaultPlayerCount:4},
+    {name:'Tens', winCondition:'highest', endCondition:'rounds', roundsOrPoints:7, defaultPlayerCount:3},
+  ];
+  save(LS.favs, seed);
+  if(getPlayers().length===0) setPlayers(['Sam','Riley','Jordan','Casey']);
+  return seed;
+}
+
+/* ---------- app state ---------- */
+let app = {
+  screen:'home',
+  setup:null,   // setup draft
+  game:null,    // active game
+};
+let resumeFlag = false; // true while Resume drawer flow
+
+/* ---------- utils ---------- */
+const $  = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function ordinal(n){ const s=['th','st','nd','rd'],v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+function totalOf(p){ return p.scores.reduce((a,b)=>a+(b||0),0); }
+function fmtDate(ts){
+  const d=new Date(ts), now=new Date();
+  const sameDay=d.toDateString()===now.toDateString();
+  const t=d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+  if(sameDay) return 'Today '+t;
+  return d.toLocaleDateString([], {month:'short',day:'numeric'})+' '+t;
+}
+
+/* compute competition rank (1,2,2,4) per win condition. returns map id->rank */
+function computeRanks(players, winCondition){
+  const arr = players.map(p=>({id:p.id, t:totalOf(p)}));
+  arr.sort((a,b)=> winCondition==='lowest' ? a.t-b.t : b.t-a.t);
+  const ranks={}; let rank=0, prev=null, seen=0;
+  for(const e of arr){ seen++; if(prev===null||e.t!==prev){rank=seen;prev=e.t;} ranks[e.id]=rank; }
+  return ranks;
+}
+/* sorted copy of players for display */
+function sortPlayers(players, mode, winCondition){
+  const copy=[...players];
+  if(mode==='name') copy.sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
+  else copy.sort((a,b)=> winCondition==='lowest' ? totalOf(a)-totalOf(b) : totalOf(b)-totalOf(a));
+  return copy;
+}
+
+/* ---------- toast ---------- */
+let toastTimer=null;
+function toast(msg, standing){
+  const t=$('#toast');
+  t.innerHTML = esc(msg) + (standing?`<span class="t-stand">${esc(standing)}</span>`:'');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'), standing?2600:1800);
+}
+
+/* ---------- overlay (drawers + modals) ---------- */
+function openOverlay(html, centered){
+  const o=$('#overlay');
+  o.innerHTML = `<div class="scrim ${centered?'center':''}">${html}</div>`;
+  const scrim=$('.scrim',o);
+  scrim.addEventListener('click', e=>{ if(e.target===scrim) closeOverlay(); });
+  return o;
+}
+function closeOverlay(){ $('#overlay').innerHTML=''; }
+
+function confirmAction(title, msg, confirmLabel, onConfirm, danger=true){
+  openOverlay(`<div class="modal">
+    <h3>${esc(title)}</h3><p>${esc(msg)}</p>
+    <div class="btn-row">
+      <button class="btn btn-ghost btn-sm" data-act="cancel">Cancel</button>
+      <button class="btn ${danger?'btn-danger':'btn-primary'} btn-sm" data-act="ok">${esc(confirmLabel)}</button>
+    </div></div>`, true);
+  $('[data-act="cancel"]').onclick=closeOverlay;
+  $('[data-act="ok"]').onclick=()=>{ closeOverlay(); onConfirm(); };
+}
+
+/* ============================================================
+   ROUTER
+   ============================================================ */
+function navigate(screen){ app.screen=screen; render(); window.scrollTo(0,0); $('#app').scrollTop=0; }
+
+function render(){
+  switch(app.screen){
+    case 'home':     renderHeader('Score Keeper', null, false); renderHome(); break;
+    case 'setup':    renderHeader('New Game', null, true); renderSetup(); break;
+    case 'active':   renderHeader(app.game.matchName, app.game.gameName, true, true); renderActive(); break;
+    case 'gameover': renderHeader('Game Over', null, false); renderGameOver(); break;
+  }
+}
+
+function renderHeader(title, sub, showBack, isActive){
+  const h=$('#hdr');
+  h.innerHTML = `
+    ${showBack?`<button class="icon-btn" id="backBtn" aria-label="Home">‹</button>`:`<div class="icon-btn" style="background:rgba(255,255,255,.0);font-size:1.4rem;">▦</div>`}
+    <div class="h-title">${esc(title)}${sub?`<span class="sub">${esc(sub)}</span>`:''}</div>
+  `;
+  const back=$('#backBtn');
+  if(back) back.onclick=()=>{
+    if(isActive){
+      confirmAction('Leave game?','Your progress is auto-saved. Return to Home?','Go Home',()=>{ persistActive(); navigate('home'); }, false);
+    } else navigate('home');
+  };
+}
+
+/* ============================================================
+   SCREEN 1 — HOME
+   ============================================================ */
+function renderHome(){
+  const favs=getFavs(), players=getPlayers(), matches=getMatches().filter(m=>!m.finished);
+  const m=$('#app');
+  m.innerHTML = `
+    <div class="stack" style="margin-top:6px;">
+      <button class="btn btn-primary" id="newBtn">＋ New Game</button>
+      <button class="btn btn-secondary" id="resumeBtn">↻ Resume Saved Game${matches.length?` <span class="badge">${matches.length}</span>`:''}</button>
+    </div>
+
+    <h2 class="section">Favorites</h2>
+    <div id="favList" class="stack"></div>
+
+    <h2 class="section">Saved Players</h2>
+    <div class="card">
+      <div class="chips" id="playerChips"></div>
+      <p class="hint">Tap a player to remove. Add players when you start a game.</p>
+    </div>
+  `;
+  $('#newBtn').onclick=()=>{ startNewSetup(); };
+  $('#resumeBtn').onclick=openResumeDrawer;
+
+  // favorites
+  const fl=$('#favList');
+  if(favs.length===0){ fl.innerHTML=`<div class="empty">No favorites yet — save one from Game Setup.</div>`; }
+  else fl.innerHTML = favs.map((f,i)=>{
+    const cond = (f.winCondition==='lowest'?'Lowest wins':'Highest wins');
+    const end  = f.endCondition==='rounds'?`${f.roundsOrPoints} rounds`:`to ${f.roundsOrPoints} pts`;
+    return `<div class="tap-card" data-fav="${i}">
+      <div class="tc-body">
+        <div class="tc-title">${esc(f.name)}</div>
+        <div class="tc-meta">${f.defaultPlayerCount} players · ${cond} · ${end}</div>
+      </div>
+      <button class="tc-del" data-delfav="${i}" aria-label="Delete">🗑</button>
+    </div>`;
+  }).join('');
+  $$('[data-fav]',fl).forEach(el=>el.onclick=e=>{
+    if(e.target.closest('[data-delfav]')) return;
+    loadFavoriteIntoSetup(favs[+el.dataset.fav]);
+  });
+  $$('[data-delfav]',fl).forEach(el=>el.onclick=e=>{
+    e.stopPropagation();
+    const i=+el.dataset.delfav, f=favs[i];
+    confirmAction('Delete favorite?',`Remove “${f.name}” from your favorites?`,'Delete',()=>{
+      const a=getFavs(); a.splice(i,1); setFavs(a); renderHome(); toast('Favorite deleted');
+    });
+  });
+
+  // saved players
+  const pc=$('#playerChips');
+  if(players.length===0){ pc.innerHTML=`<span class="hint">No saved players yet.</span>`; }
+  else pc.innerHTML = players.map((p,i)=>`<button class="chip" data-delpl="${i}">${esc(p)} <span class="x">✕</span></button>`).join('');
+  $$('[data-delpl]',pc).forEach(el=>el.onclick=()=>{
+    const i=+el.dataset.delpl, name=players[i];
+    confirmAction('Remove player?',`Remove “${name}” from saved players?`,'Remove',()=>{
+      const a=getPlayers(); a.splice(i,1); setPlayers(a); renderHome(); toast('Player removed');
+    });
+  });
+}
+
+function openResumeDrawer(){
+  const matches=getMatches().filter(m=>!m.finished).sort((a,b)=>b.dateSaved-a.dateSaved);
+  const body = matches.length===0
+    ? `<div class="empty">No saved games to resume.<br>Start a game and use “Save &amp; Exit”.</div>`
+    : `<div class="stack">`+matches.map(mm=>`
+        <div class="tap-card" data-resume="${mm.id}">
+          <div class="tc-body">
+            <div class="tc-title">${esc(mm.matchName)}</div>
+            <div class="tc-meta">${esc(mm.gameName)} · ${mm.players.length} players · ${roundLabel(mm)} · ${fmtDate(mm.dateSaved)}</div>
+          </div>
+          <button class="tc-del" data-delmatch="${mm.id}" aria-label="Delete">🗑</button>
+        </div>`).join('')+`</div>`;
+  openOverlay(`<div class="drawer">
+    <div class="d-head"><h3>Resume Saved Game</h3><button class="icon-btn" style="background:#dde2ea;color:#16202e;" data-close>✕</button></div>
+    <div class="d-body">${body}</div></div>`);
+  $('[data-close]').onclick=closeOverlay;
+  $$('[data-resume]').forEach(el=>el.onclick=e=>{
+    if(e.target.closest('[data-delmatch]')) return;
+    const mm=getMatches().find(x=>x.id===el.dataset.resume);
+    resumeMatch(mm);
+  });
+  $$('[data-delmatch]').forEach(el=>el.onclick=e=>{
+    e.stopPropagation();
+    const id=el.dataset.delmatch, mm=getMatches().find(x=>x.id===id);
+    confirmAction('Delete saved game?',`Delete “${mm.matchName}”? This can’t be undone.`,'Delete',()=>{
+      setMatches(getMatches().filter(x=>x.id!==id)); openResumeDrawer(); toast('Saved game deleted');
+    });
+  });
+}
+function roundLabel(g){
+  return g.endCondition==='rounds'
+    ? `Round ${Math.min(g.currentRound,g.roundsOrPoints)} of ${g.roundsOrPoints}`
+    : `Round ${g.currentRound} · to ${g.roundsOrPoints} pts`;
+}
+
+/* ============================================================
+   SCREEN 2 — GAME SETUP
+   ============================================================ */
+function blankSetup(){
+  return { matchName:'', gameName:'', winCondition:'lowest', endCondition:'rounds',
+    rounds:10, threshold:100, playerCount:4, playerNames:['','','',''] };
+}
+function startNewSetup(presetNames){
+  app.setup = blankSetup();
+  if(presetNames && presetNames.length){
+    app.setup.playerCount = Math.min(8,Math.max(2,presetNames.length));
+    app.setup.playerNames = [...presetNames];
+    while(app.setup.playerNames.length<app.setup.playerCount) app.setup.playerNames.push('');
+  }
+  navigate('setup');
+}
+function loadFavoriteIntoSetup(f){
+  app.setup = blankSetup();
+  app.setup.gameName = f.name;
+  app.setup.winCondition = f.winCondition;
+  app.setup.endCondition = f.endCondition;
+  if(f.endCondition==='rounds') app.setup.rounds = f.roundsOrPoints; else app.setup.threshold = f.roundsOrPoints;
+  app.setup.playerCount = f.defaultPlayerCount;
+  app.setup.playerNames = Array.from({length:f.defaultPlayerCount},()=>'');
+  navigate('setup');
+  toast('Loaded “'+f.name+'” — edit anything before starting');
+}
+
+function renderSetup(){
+  const s=app.setup, favs=getFavs(), saved=getPlayers();
+  const m=$('#app');
+  m.innerHTML = `
+    <div id="setupErr"></div>
+    <div class="card">
+      <label class="field"><span class="lbl">Match name</span>
+        <input class="input" id="matchName" placeholder="e.g. The Winos, Game Night" value="${esc(s.matchName)}"></label>
+
+      <label class="field" style="margin-bottom:6px;"><span class="lbl">Game</span>
+        <input class="input" id="gameName" list="favGames" placeholder="e.g. Skyjo" value="${esc(s.gameName)}"></label>
+      <datalist id="favGames">${favs.map(f=>`<option value="${esc(f.name)}">`).join('')}</datalist>
+      <button class="btn btn-ghost btn-sm" id="saveFav" style="margin-top:4px;">★ Save current setup as favorite</button>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <span class="lbl">Win condition</span>
+      <div class="seg" id="winSeg" style="margin-bottom:14px;">
+        <button data-win="lowest" class="${s.winCondition==='lowest'?'on':''}">Lowest wins</button>
+        <button data-win="highest" class="${s.winCondition==='highest'?'on':''}">Highest wins</button>
+      </div>
+      <span class="lbl">End condition</span>
+      <div class="seg" id="endSeg" style="margin-bottom:14px;">
+        <button data-end="rounds" class="${s.endCondition==='rounds'?'on':''}">Fixed rounds</button>
+        <button data-end="threshold" class="${s.endCondition==='threshold'?'on':''}">Point threshold</button>
+      </div>
+      <div id="endInput"></div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <span class="lbl">Players</span>
+      <div class="stepper" style="margin-bottom:14px;">
+        <button id="plMinus">−</button>
+        <div class="val" id="plCount">${s.playerCount} players</div>
+        <button id="plPlus">＋</button>
+      </div>
+      <div id="playerFields"></div>
+    </div>
+
+    <div class="footer">
+      <button class="btn btn-primary" id="startBtn">Start Game →</button>
+    </div>
+  `;
+  // bind text fields
+  $('#matchName').oninput=e=>s.matchName=e.target.value;
+  $('#gameName').oninput=e=>s.gameName=e.target.value;
+  $('#saveFav').onclick=saveCurrentAsFavorite;
+
+  // toggles
+  $$('#winSeg button').forEach(b=>b.onclick=()=>{s.winCondition=b.dataset.win;render();});
+  $$('#endSeg button').forEach(b=>b.onclick=()=>{s.endCondition=b.dataset.end;render();});
+  renderEndInput();
+
+  // player count stepper
+  $('#plMinus').onclick=()=>changeCount(-1);
+  $('#plPlus').onclick=()=>changeCount(1);
+  renderPlayerFields();
+
+  $('#startBtn').onclick=validateAndStart;
+
+  function renderEndInput(){
+    const c=$('#endInput');
+    if(s.endCondition==='rounds'){
+      c.innerHTML=`<label class="field" style="margin:0;"><span class="lbl">Total rounds</span>
+        <input class="input" id="roundsIn" type="text" inputmode="numeric" value="${s.rounds}"></label>`;
+      $('#roundsIn').oninput=e=>s.rounds=e.target.value.replace(/[^0-9]/g,'');
+    } else {
+      c.innerHTML=`<label class="field" style="margin:0;"><span class="lbl">Target / max points</span>
+        <input class="input" id="threshIn" type="text" inputmode="numeric" value="${s.threshold}">
+        <span class="hint">${s.winCondition==='lowest'?'First to reach this loses — best score wins.':'First to reach this wins.'}</span></label>`;
+      $('#threshIn').oninput=e=>s.threshold=e.target.value.replace(/[^0-9]/g,'');
+    }
+  }
+  function changeCount(d){
+    const n=Math.min(8,Math.max(2,s.playerCount+d));
+    if(n===s.playerCount) return;
+    s.playerCount=n;
+    if(s.playerNames.length<n) while(s.playerNames.length<n) s.playerNames.push('');
+    else s.playerNames=s.playerNames.slice(0,n);
+    $('#plCount').textContent=n+' players';
+    renderPlayerFields();
+  }
+  function renderPlayerFields(){
+    const c=$('#playerFields');
+    c.innerHTML=s.playerNames.map((nm,i)=>`
+      <div class="pl-row">
+        <span class="num">${i+1}</span>
+        <input class="input" data-pl="${i}" placeholder="Player ${i+1}" value="${esc(nm)}">
+        <button class="quick-btn" data-quick="${i}" aria-label="Quick add">👤</button>
+      </div>`).join('');
+    $$('[data-pl]',c).forEach(inp=>inp.oninput=()=>s.playerNames[+inp.dataset.pl]=inp.value);
+    $$('[data-quick]',c).forEach(b=>b.onclick=()=>openQuickAdd(+b.dataset.quick));
+  }
+}
+
+function openQuickAdd(idx){
+  const saved=getPlayers();
+  const used=app.setup.playerNames.map(n=>n.trim().toLowerCase());
+  const body = saved.length===0
+    ? `<div class="empty">No saved players yet. Type names directly, and they’ll be saved when you start.</div>`
+    : `<div class="chips">`+saved.map(p=>{
+        const isUsed=used.includes(p.toLowerCase());
+        return `<button class="chip ${isUsed?'':'accent'}" data-pick="${esc(p)}" ${isUsed?'disabled style="opacity:.4"':''}>${esc(p)}</button>`;
+      }).join('')+`</div>`;
+  openOverlay(`<div class="drawer">
+    <div class="d-head"><h3>Add player ${idx+1}</h3><button class="icon-btn" style="background:#dde2ea;color:#16202e;" data-close>✕</button></div>
+    <div class="d-body">${body}<p class="hint">Tap a name to fill this slot.</p></div></div>`);
+  $('[data-close]').onclick=closeOverlay;
+  $$('[data-pick]').forEach(b=>{ if(b.disabled) return; b.onclick=()=>{
+    app.setup.playerNames[idx]=b.dataset.pick; closeOverlay(); render();
+  };});
+}
+
+function saveCurrentAsFavorite(){
+  const s=app.setup;
+  if(!s.gameName.trim()){ toast('Enter a game name first'); return; }
+  const fav={
+    name:s.gameName.trim(),
+    winCondition:s.winCondition,
+    endCondition:s.endCondition,
+    roundsOrPoints: s.endCondition==='rounds'? (parseInt(s.rounds)||1) : (parseInt(s.threshold)||1),
+    defaultPlayerCount:s.playerCount,
+  };
+  const favs=getFavs();
+  const ex=favs.findIndex(f=>f.name.toLowerCase()===fav.name.toLowerCase());
+  if(ex>=0) favs[ex]=fav; else favs.push(fav);
+  setFavs(favs);
+  toast(ex>=0?'Favorite updated':'Saved to favorites ★');
+}
+
+function validateAndStart(){
+  const s=app.setup, errs=[];
+  if(!s.matchName.trim()) errs.push('match name');
+  if(!s.gameName.trim()) errs.push('game name');
+  const names=s.playerNames.map(n=>n.trim());
+  if(names.some(n=>!n)) errs.push('all player names');
+  const dupe = new Set(names.map(n=>n.toLowerCase())).size!==names.length;
+  const num = s.endCondition==='rounds'? parseInt(s.rounds): parseInt(s.threshold);
+  if(!num||num<1) errs.push(s.endCondition==='rounds'?'a valid round count':'a valid point target');
+
+  const eb=$('#setupErr');
+  if(errs.length||dupe){
+    eb.innerHTML=`<div class="err-banner">${dupe?'Player names must be unique. ':''}${errs.length?'Please fill: '+errs.join(', ')+'.':''}</div>`;
+    eb.scrollIntoView?null:null; $('#app').scrollTop=0;
+    return;
+  }
+  // save new players
+  const sp=getPlayers();
+  names.forEach(n=>{ if(!sp.some(x=>x.toLowerCase()===n.toLowerCase())) sp.push(n); });
+  setPlayers(sp);
+
+  app.game={
+    id:uid(),
+    matchName:s.matchName.trim(),
+    gameName:s.gameName.trim(),
+    winCondition:s.winCondition,
+    endCondition:s.endCondition,
+    roundsOrPoints:num,
+    currentRound:1,
+    players:names.map(n=>({id:uid(),name:n,scores:[]})),
+    sortMode:'score',
+    pending:{},
+    dateSaved:Date.now(),
+    finished:false,
+  };
+  persistActive();
+  navigate('active');
+}
+
+/* ============================================================
+   SCREEN 3 — ACTIVE SCORING
+   ============================================================ */
+function persistActive(){
+  if(!app.game) return;
+  const g={...app.game}; delete g.pending;
+  g.dateSaved=Date.now();
+  const matches=getMatches();
+  const i=matches.findIndex(m=>m.id===g.id);
+  if(i>=0) matches[i]=g; else matches.push(g);
+  setMatches(matches);
+}
+function resumeMatch(mm){
+  app.game={...mm, pending:{}, sortMode:mm.sortMode||'score'};
+  closeOverlay();
+  navigate('active');
+}
+
+function renderActive(){
+  const g=app.game, m=$('#app');
+  const sorted=sortPlayers(g.players, g.sortMode, g.winCondition);
+  const ranks=computeRanks(g.players, g.winCondition);
+
+  m.innerHTML=`
+    <div class="lead-bar">
+      <div style="font-weight:700;font-size:.95rem;">${roundLabel(g)}</div>
+      <div class="sort">
+        <span class="hint" style="margin:0;">Sort</span>
+        <div class="seg" id="sortSeg">
+          <button data-sort="name" class="${g.sortMode==='name'?'on':''}">A–Z</button>
+          <button data-sort="score" class="${g.sortMode==='score'?'on':''}">Score</button>
+        </div>
+      </div>
+    </div>
+    <div id="rows"></div>
+    <div class="footer">
+      <button class="btn btn-primary" id="endRound">End Round ${g.currentRound}</button>
+      <div class="mini-row">
+        <button class="btn btn-ghost" id="editHist">✎ Edit Past Rounds</button>
+        <button class="btn btn-ghost" id="saveExit">💾 Save &amp; Exit</button>
+      </div>
+    </div>
+  `;
+  $$('#sortSeg button').forEach(b=>b.onclick=()=>{g.sortMode=b.dataset.sort;renderActive();});
+  $('#editHist').onclick=openHistoryDrawer;
+  $('#saveExit').onclick=()=>{ persistActive(); toast('Game saved'); setTimeout(()=>navigate('home'),350); };
+  $('#endRound').onclick=endRound;
+
+  const rc=$('#rows');
+  rc.innerHTML=sorted.map(p=>{
+    const r=ranks[p.id];
+    const rc2 = r<=3?`r${r}`:'';
+    return `<div class="prow ${rc2}">
+      <div class="rank">${r}<small>${ordinal(r).replace(/^\d+/,'')}</small></div>
+      <div class="p-info">
+        <div class="p-name">${esc(p.name)}</div>
+        <div class="p-total">Total <b>${totalOf(p)}</b></div>
+      </div>
+      <div class="p-in">
+        <input class="input" data-score="${p.id}" type="text" inputmode="numeric"
+          placeholder="Round pts" value="${g.pending[p.id]!=null?esc(g.pending[p.id]):''}">
+      </div>
+    </div>`;
+  }).join('');
+
+  $$('[data-score]',rc).forEach(inp=>{
+    inp.oninput=()=>{
+      let v=inp.value.replace(/[^0-9\-]/g,'');
+      if(v.indexOf('-')>0) v=v.replace(/-/g,''); // minus only at start
+      inp.value=v;
+      g.pending[inp.dataset.score]=v;
+      updateEndBtn();
+    };
+  });
+  updateEndBtn();
+
+  function updateEndBtn(){
+    const all=g.players.every(p=>{
+      const v=g.pending[p.id];
+      return v!=null && v!=='' && v!=='-' && !isNaN(parseInt(v));
+    });
+    $('#endRound').disabled=!all;
+  }
+}
+
+function endRound(){
+  const g=app.game;
+  // commit pending
+  g.players.forEach(p=>{ p.scores.push(parseInt(g.pending[p.id])||0); });
+  g.pending={};
+
+  // determine if game ends
+  let ended=false;
+  if(g.endCondition==='rounds'){
+    if(g.currentRound>=g.roundsOrPoints) ended=true;
+  } else {
+    if(g.players.some(p=>totalOf(p)>=g.roundsOrPoints)) ended=true;
+  }
+
+  if(ended){
+    finishGame();
+    return;
+  }
+  g.currentRound++;
+  persistActive();
+  renderActive();
+  // standings toast
+  const ranks=computeRanks(g.players,g.winCondition);
+  const leader=g.players.reduce((best,p)=> ranks[p.id]<ranks[best.id]?p:best, g.players[0]);
+  const tiedLeaders=g.players.filter(p=>ranks[p.id]===1);
+  const stand = tiedLeaders.length>1
+    ? `Tied for 1st: ${tiedLeaders.map(p=>p.name).join(', ')}`
+    : `${leader.name} leads with ${totalOf(leader)}`;
+  toast(`Round ${g.currentRound-1} complete`, stand);
+}
+
+function finishGame(){
+  const g=app.game;
+  g.finished=true;
+  persistActive();
+  navigate('gameover');
+}
+
+/* ---------- edit history drawer ---------- */
+function openHistoryDrawer(){
+  const g=app.game;
+  const rounds = g.players[0].scores.length;
+  if(rounds===0){
+    openOverlay(`<div class="drawer"><div class="d-head"><h3>Edit Past Rounds</h3>
+      <button class="icon-btn" style="background:#dde2ea;color:#16202e;" data-close>✕</button></div>
+      <div class="d-body"><div class="empty">No completed rounds yet.</div></div></div>`);
+    $('[data-close]').onclick=closeOverlay; return;
+  }
+  let head=`<th>Rnd</th>`+g.players.map(p=>`<th>${esc(p.name)}</th>`).join('');
+  let rows='';
+  for(let r=0;r<rounds;r++){
+    rows+=`<tr><th>${r+1}</th>`+g.players.map(p=>
+      `<td><input type="text" inputmode="numeric" data-r="${r}" data-p="${p.id}" value="${p.scores[r]}"></td>`).join('')+`</tr>`;
+  }
+  let foot=`<th>Total</th>`+g.players.map(p=>`<td data-foot="${p.id}">${totalOf(p)}</td>`).join('');
+
+  openOverlay(`<div class="drawer">
+    <div class="d-head"><h3>Edit Past Rounds</h3>
+      <button class="icon-btn" style="background:#dde2ea;color:#16202e;" data-close>✕</button></div>
+    <div class="d-body">
+      <div class="scroll-wrap">
+      <table class="htable">
+        <thead><tr>${head}</tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr>${foot}</tr></tfoot>
+      </table></div>
+      <p class="hint">Tap any cell to edit. Totals recalculate on save.</p>
+      <button class="btn btn-primary" id="saveHist" style="margin-top:14px;">Save Changes</button>
+    </div></div>`);
+  $('[data-close]').onclick=closeOverlay;
+
+  // sanitize inputs (allow leading minus)
+  $$('input[data-r]').forEach(inp=>inp.oninput=()=>{
+    let v=inp.value.replace(/[^0-9\-]/g,''); if(v.indexOf('-')>0) v=v.replace(/-/g,''); inp.value=v;
+    // live foot update
+    const pid=inp.dataset.p;
+    const t=$$('input[data-p="'+pid+'"]').reduce((a,el)=>a+(parseInt(el.value)||0),0);
+    $('[data-foot="'+pid+'"]').textContent=t;
+  });
+
+  $('#saveHist').onclick=()=>{
+    const changed=[];
+    $$('input[data-r]').forEach(inp=>{
+      const r=+inp.dataset.r, pid=inp.dataset.p;
+      const p=g.players.find(x=>x.id===pid);
+      const nv=parseInt(inp.value)||0;
+      if(p.scores[r]!==nv){ p.scores[r]=nv; changed.push(inp); }
+    });
+    // flash changed cells then close
+    changed.forEach(inp=>inp.closest('td').classList.add('flash'));
+    persistActive();
+    if(changed.length){
+      toast(`${changed.length} value${changed.length>1?'s':''} updated`);
+      setTimeout(()=>{ closeOverlay(); renderActive(); }, 850);
+    } else { closeOverlay(); toast('No changes'); }
+  };
+}
+
+/* ============================================================
+   SCREEN 4 — GAME OVER
+   ============================================================ */
+function renderGameOver(){
+  const g=app.game, m=$('#app');
+  const ranks=computeRanks(g.players,g.winCondition);
+  const winners=g.players.filter(p=>ranks[p.id]===1);
+  const ordered=sortPlayers(g.players,'score',g.winCondition);
+  const rounds=g.players[0].scores.length;
+  const tie=winners.length>1;
+
+  const winName = tie ? winners.map(w=>w.name).join(' & ') : winners[0].name;
+  const winScore = totalOf(winners[0]);
+
+  // scoreboard table
+  let head=`<th>Rnd</th>`+ordered.map(p=>`<th>${esc(p.name)}</th>`).join('');
+  let rows='';
+  for(let r=0;r<rounds;r++){
+    rows+=`<tr><th>${r+1}</th>`+ordered.map(p=>`<td style="padding:7px 4px;">${p.scores[r]}</td>`).join('')+`</tr>`;
+  }
+  let foot=`<th>Total</th>`+ordered.map(p=>`<td>${totalOf(p)}</td>`).join('');
+  let posRow=`<th></th>`+ordered.map(p=>`<td><span class="badge" style="background:${ranks[p.id]===1?'var(--accent)':'#8a97a8'};">${ordinal(ranks[p.id])}</span></td>`).join('');
+
+  m.innerHTML=`
+    <div class="card winner-wrap">
+      <div class="crown">👑</div>
+      <div class="winner-label">${tie?'It’s a tie!':'Winner'}</div>
+      <div class="winner-name">${esc(winName)}</div>
+      <div class="winner-score">${winScore} pts · ${g.winCondition==='lowest'?'lowest':'highest'} wins</div>
+    </div>
+
+    <h2 class="section">Final Scoreboard</h2>
+    <div class="card" style="padding:10px;">
+      <div class="scroll-wrap">
+        <table class="htable">
+          <thead><tr>${head}</tr></thead>
+          <tbody>${rows}</tbody>
+          <tfoot>
+            <tr>${foot}</tr>
+            <tr>${posRow}</tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="footer">
+      <button class="btn btn-primary" id="sameBtn">↺ New Game, Same Players</button>
+      <div class="mini-row"><button class="btn btn-secondary" id="homeBtn">Return to Home</button></div>
+    </div>
+  `;
+  $('#sameBtn').onclick=()=>{ startNewSetup(g.players.map(p=>p.name)); };
+  $('#homeBtn').onclick=()=>navigate('home');
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+getFavs(); // ensure seed runs on first load
+navigate('home');
+</script>
+</body>
+</html>
