@@ -273,6 +273,27 @@
   }
   .toggle-switch input:checked + .toggle-slider{background:var(--accent);}
   .toggle-switch input:checked + .toggle-slider:before{transform:translateX(20px);}
+  /* info button */
+  .info-btn{
+    flex:none;width:32px;height:32px;border-radius:50%;border:2px solid var(--border);
+    background:#fff;color:var(--muted);font-size:.95rem;font-weight:800;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-family:serif;line-height:1;
+  }
+  .info-btn:active{background:#eef1f6;border-color:var(--accent);color:var(--accent);}
+  /* info drawer content */
+  .info-section{margin-bottom:18px;}
+  .info-section:last-child{margin-bottom:0;}
+  .info-section h4{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--muted);font-weight:700;margin:0 0 8px;}
+  .info-row{display:flex;justify-content:space-between;align-items:baseline;
+    padding:7px 0;border-bottom:1px solid var(--border);font-size:.92rem;}
+  .info-row:last-child{border-bottom:none;}
+  .info-row .ir-label{color:var(--muted);flex:1;}
+  .info-row .ir-val{font-weight:700;color:var(--text);text-align:right;margin-left:12px;}
+  .info-rule{font-size:.9rem;color:var(--text);line-height:1.55;padding:8px 0;
+    border-bottom:1px solid var(--border);}
+  .info-rule:last-child{border-bottom:none;}
+  .info-rule strong{color:var(--navy);}
   /* quick select game chips */
   .qs-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px;}
   .qs-chip{
@@ -411,6 +432,188 @@ const QUICK_GAMES = [
     enableBids:false,
   },
 ];
+
+/* ============================================================
+   GAME INFO — scoring summaries shown via the (i) button during active play
+   ============================================================ */
+const GAME_INFO = {
+  'Mexican Train': {
+    objective: 'Lowest total pip count after 13 rounds wins.',
+    scoring: [
+      {label: 'Going out (no tiles left)', val: '0 points'},
+      {label: 'Each remaining pip (dot)', val: '1 point each'},
+      {label: 'Double blank tile', val: '50 points (house rule varies)'},
+    ],
+    rules: [
+      '<strong>Round 1</strong> starts with Double 12, ending at Double 0 in Round 13.',
+      'First player to empty their hand each round scores 0. Everyone else counts remaining pips.',
+      'Skipped rounds must be completed before the game can end.',
+    ],
+    tip: 'Play your highest-value tiles early to keep your score low.',
+  },
+  'Skyjo': {
+    objective: 'Lowest cumulative score when any player hits 100+ points wins.',
+    scoring: [
+      {label: 'Card values', val: '-2 to 12'},
+      {label: 'Three matching cards in a column', val: 'Removed (0 pts)'},
+      {label: 'Going out without lowest score', val: 'Your round pts doubled'},
+    ],
+    rules: [
+      'A round ends when one player flips all their cards face-up.',
+      'If the player who ended the round doesn\'t have the lowest score, their round total is doubled (positive scores only).',
+      'Game ends after the round in which any player reaches 100+ total points.',
+    ],
+    tip: 'Try to clear columns of matching numbers — they score zero and remove cards from your hand.',
+  },
+  'Flip 7': {
+    objective: 'First player to reach 200+ total points wins.',
+    scoring: [
+      {label: 'Number cards', val: 'Face value (e.g. 10 = 10 pts)'},
+      {label: 'Flip 7 unique cards in one round', val: '+15 bonus pts'},
+      {label: 'Draw a duplicate number', val: 'Bust — 0 pts that round'},
+      {label: 'x2 modifier', val: 'Doubles your number card total'},
+      {label: '+2 / +4 / +6 / +8 / +10 modifier', val: 'Added to your total'},
+    ],
+    rules: [
+      'On your turn: Hit (take another card) or Stay (bank your points).',
+      'If you draw a duplicate number you\'re already holding, you bust and score 0 for the round.',
+      'Modifiers can\'t cause a bust and can\'t reduce your score below 0.',
+    ],
+    tip: 'High cards (10s, 11s, 12s) are the most common in the deck — the more you hold, the higher your bust risk.',
+  },
+  'Flip 7 Vengeance': {
+    objective: 'First player to reach 200+ total points wins.',
+    scoring: [
+      {label: 'Number cards', val: 'Face value'},
+      {label: 'Flip 7 unique cards', val: '+15 pts OR take 15 from another player'},
+      {label: 'Bust (duplicate number)', val: '0 pts that round'},
+      {label: '÷2 modifier', val: 'Halves your number card total (round down)'},
+      {label: 'Minus modifiers', val: 'Subtract from total (min 0, or negative in Brutal Mode)'},
+      {label: 'Lucky 13', val: 'You can hold two 13s without busting'},
+      {label: 'Unlucky 7', val: 'Discard all your number cards immediately'},
+    ],
+    rules: [
+      'Same core rules as Flip 7 — Hit or Stay, duplicate = bust.',
+      'When you Flip 7, you choose: take +15 pts for yourself OR force another player to lose 15 pts.',
+      'Brutal Mode (optional): minus modifiers can push your score below 0.',
+    ],
+    tip: 'The ÷2 card is dangerous — try to pass it to the player with the highest score.',
+  },
+  'Sevens': {
+    objective: 'Lowest score when any player reaches 100+ points wins.',
+    scoring: [
+      {label: 'Cards left in hand (number cards)', val: 'Face value each'},
+      {label: 'Jack, Queen, King left in hand', val: '10 points each'},
+      {label: 'Going out first', val: '0 points'},
+    ],
+    rules: [
+      'Each round, play builds out from the 7s in each suit (6 and 8 of same suit, then 5 and 9, etc.).',
+      'If you can\'t play on your turn, you pass.',
+      'Round ends when one player plays their last card. Everyone else scores remaining hand value.',
+    ],
+    tip: 'Hold 6s and 8s strategically — they control flow in both directions and can block opponents.',
+  },
+  '3 Up 3 Down': {
+    objective: 'Lowest score after agreed rounds wins.',
+    scoring: [
+      {label: 'Going out first', val: '0 points'},
+      {label: 'Cards left in hand', val: 'Face value each'},
+      {label: 'Special cards (2, 10, Clear)', val: '0 points if held'},
+    ],
+    rules: [
+      'Each turn, play a card equal to or higher than the top of the discard pile.',
+      'Can\'t play? Pick up the entire discard pile.',
+      'Once your hand and draw pile are empty, play your 3 Up (face-up) cards, then your 3 Down (blind) cards.',
+      '10 burns the pile (remove from game). 2 resets the pile (play anything next).',
+    ],
+    tip: 'Save 2s and 10s for your 3 Down phase — playing blind is risky and those cards can save you.',
+  },
+  'Oh Hell': {
+    objective: 'Highest total score after all rounds wins.',
+    scoring: [
+      {label: 'Each trick won', val: '1 point'},
+      {label: 'Exact bid match', val: 'Tricks taken + 10 bonus'},
+      {label: 'Bid 0, take 0 tricks', val: '10 points'},
+      {label: 'Miss your bid', val: 'Tricks taken only, no bonus'},
+    ],
+    rules: [
+      'At the start of each round, every player bids how many tricks they expect to win.',
+      'The dealer bids last and cannot bid a number that would make total bids equal the number of tricks available.',
+      'Rounds go from max hand size down to 1 card, then back up to max hand size.',
+      'Trump suit is determined by flipping the top undealt card after dealing.',
+    ],
+    tip: 'Accurate bidding is everything — a clean 0-bid scores the same bonus as bidding 1 and hitting it.',
+  },
+  'Tens': {
+    objective: 'Scoring varies by house rules — highest or lowest score wins depending on your group.',
+    scoring: [
+      {label: 'Scoring method', val: 'Set by your group'},
+    ],
+    rules: [
+      'Tens has many regional variations with different scoring systems.',
+      'Common method: count remaining cards or pips in hand at end of round.',
+      'Some versions score points for pairs made, runs completed, or cards played.',
+      'Check your group\'s house rules — this info panel reflects your configured win condition.',
+    ],
+    tip: 'Since Tens uses Open Play here, your group decides when to end the game.',
+  },
+};
+
+/* Build a generic info object for custom (non-quick-select) games */
+function buildGenericInfo(g){
+  const winDesc = g.winCondition==='lowest' ? 'Player with the lowest total score wins.' : 'Player with the highest total score wins.';
+  const endDesc = g.endCondition==='open'
+    ? 'Open play — game ends when you tap End Game.'
+    : g.endCondition==='rounds'
+      ? `Game ends after ${g.roundsOrPoints} rounds.`
+      : `Game ends when any player reaches ${g.roundsOrPoints} points.`;
+  return {
+    objective: winDesc,
+    scoring:[{label:'Win condition', val: g.winCondition==='lowest'?'Lowest score':'Highest score'},
+             {label:'End condition', val: endDesc}],
+    rules:['Enter each player\'s score for the round and tap End Round.',
+           'Tap "Edit Past Rounds" to fix any entry mistakes.',
+           'Negative scores supported — use the +/− toggle next to each score field.'],
+    tip: null,
+  };
+}
+
+function openGameInfo(g){
+  const gameName = g.gameName.trim();
+  const info = GAME_INFO[gameName] || buildGenericInfo(g);
+
+  const scoringRows = info.scoring.map(s=>
+    `<div class="info-row"><span class="ir-label">${esc(s.label)}</span><span class="ir-val">${esc(s.val)}</span></div>`
+  ).join('');
+
+  const rulesItems = (info.rules||[]).map(r=>
+    `<div class="info-rule">${r}</div>`
+  ).join('');
+
+  const tipHtml = info.tip
+    ? `<div class="info-section"><h4>💡 Tip</h4><div class="info-rule">${esc(info.tip)}</div></div>`
+    : '';
+
+  openOverlay(`<div class="drawer">
+    <div class="d-head">
+      <h3>${esc(gameName)} — How to Score</h3>
+      <button class="icon-btn" style="background:#dde2ea;color:#16202e;" data-close>✕</button>
+    </div>
+    <div class="d-body">
+      <div class="info-section">
+        <h4>Objective</h4>
+        <div class="info-rule">${esc(info.objective)}</div>
+      </div>
+      <div class="info-section">
+        <h4>Scoring</h4>
+        ${scoringRows}
+      </div>
+      ${rulesItems?`<div class="info-section"><h4>Key Rules</h4>${rulesItems}</div>`:''}
+      ${tipHtml}
+    </div>
+  </div>`);
+  $('[data-close]').onclick=closeOverlay;
+}
 
 function seedFavs(){
   const seed=[
@@ -937,7 +1140,10 @@ function renderActive(){
   m.innerHTML=`
     ${skipWarning}
     <div class="lead-bar">
-      <div style="font-weight:700;font-size:.95rem;">${getRoundLabel(g)}</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="font-weight:700;font-size:.95rem;">${getRoundLabel(g)}</div>
+        <button class="info-btn" id="infoBtn" aria-label="Scoring info">i</button>
+      </div>
       <div class="sort">
         <span class="hint" style="margin:0;">Sort</span>
         <div class="seg" id="sortSeg">
@@ -966,6 +1172,7 @@ function renderActive(){
   `;
 
   $$('#sortSeg button').forEach(b=>b.onclick=()=>{g.sortMode=b.dataset.sort;renderActive();});
+  $('#infoBtn').onclick=()=>openGameInfo(g);
   $('#editHist').onclick=openHistoryDrawer;
   $('#saveExit').onclick=()=>{persistActive();toast('Game saved');setTimeout(()=>navigate('home'),350);};
 
